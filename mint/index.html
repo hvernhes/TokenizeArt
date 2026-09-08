@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>42 Essence — galerie et mint</title>
+<style>
+  :root {
+    --bg: #0a0d14;
+    --panel: #121722;
+    --line: #232a39;
+    --text: #e8ecf5;
+    --muted: #8b95ab;
+    --accent: #6ba9e8;
+    --danger: #e8776b;
+    --ok: #6be89b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1.5rem;
+    background: var(--bg); color: var(--text);
+    font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; font-weight: 500; margin: 0 0 .3rem; }
+  h2 { font-size: 1.1rem; font-weight: 500; margin: 2.5rem 0 1rem; }
+  a { color: var(--accent); }
+  .sub { color: var(--muted); margin: 0 0 1rem; }
+  .links { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; align-items: baseline; margin: 0 0 2rem; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 1.25rem;
+  }
+  .stats { display: flex; flex-wrap: wrap; gap: 2rem; }
+  .stat-label { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+  .stat-value { font-size: 1.3rem; }
+  code { font-family: ui-monospace, monospace; font-size: .85em; color: var(--muted); word-break: break-all; }
+  button {
+    font: inherit; padding: .6rem 1.2rem; border-radius: 8px;
+    border: 1px solid var(--accent); background: var(--accent); color: #05080e;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--accent); }
+  input {
+    font: inherit; padding: .55rem .7rem; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text);
+    width: 100%; max-width: 26rem; font-family: ui-monospace, monospace; font-size: .85em;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+  .msg { margin-top: 1rem; }
+  .msg.error { color: var(--danger); }
+  .msg.ok { color: var(--ok); }
+  .gallery { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; cursor: pointer; }
+  .card:hover, .card:focus-visible { border-color: var(--accent); outline: none; }
+  .card img { display: block; width: 100%; aspect-ratio: 1; background: #000; }
+  .card-body { padding: .8rem; }
+  dialog {
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 1.5rem; max-width: 520px; width: calc(100% - 2rem);
+  }
+  dialog::backdrop { background: rgba(4, 6, 11, .8); }
+  dialog img { display: block; width: 100%; max-width: 320px; margin: 0 auto 1.25rem; border-radius: 10px; background: #000; }
+  dialog h3 { font-size: 1.2rem; font-weight: 500; margin: 0 0 .4rem; }
+  dialog .desc { color: var(--muted); margin: 0 0 1.25rem; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: .5rem 1.25rem; margin: 0 0 1.25rem; }
+  dt { color: var(--muted); font-size: .85rem; }
+  dd { margin: 0; font-size: .9rem; }
+  .card-title { font-size: .95rem; }
+  .card-meta { color: var(--muted); font-size: .78rem; margin-top: .3rem; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; color: var(--muted); font-size: .85rem; margin-bottom: .35rem; }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>42 Essence</h1>
+  <p class="sub">
+    Collection ERC721 sur Sepolia. Image et métadonnées générées entièrement par le
+    contrat — cette page ne fait que les lire et les décoder.
+  </p>
+
+  <p class="links">
+    <code id="contract-address"></code>
+    <a id="link-etherscan" target="_blank" rel="noopener">Code source sur Etherscan</a>
+    <a id="link-blockscout" target="_blank" rel="noopener">Collection sur Blockscout</a>
+  </p>
+
+  <div class="panel">
+    <div class="stats">
+      <div>
+        <div class="stat-label">Exemplaires</div>
+        <div class="stat-value" id="stat-minted">—</div>
+      </div>
+      <div>
+        <div class="stat-label">Plafond</div>
+        <div class="stat-value" id="stat-max">—</div>
+      </div>
+      <div>
+        <div class="stat-label">Propriétaire du contrat</div>
+        <div class="stat-value"><code id="stat-owner">—</code></div>
+      </div>
+    </div>
+    <p class="msg" id="read-msg"></p>
+  </div>
+
+  <h2>Minter un exemplaire</h2>
+
+  <div class="panel">
+    <p class="sub" style="margin:0 0 1.25rem">
+      Le mint est réservé au propriétaire du contrat. Toute autre adresse est refusée
+      par le contrat lui-même.
+    </p>
+
+    <div class="row">
+      <button id="btn-connect">Connecter MetaMask</button>
+      <code id="account"></code>
+    </div>
+
+    <div id="mint-form" hidden style="margin-top:1.25rem">
+      <div class="field">
+        <label for="recipient">Adresse destinataire</label>
+        <input id="recipient" placeholder="0x…" spellcheck="false">
+      </div>
+      <button id="btn-mint">Minter</button>
+    </div>
+
+    <p class="msg" id="mint-msg"></p>
+  </div>
+
+  <h2>Les exemplaires existants</h2>
+  <p class="sub" style="margin:-.5rem 0 1rem">Cliquer sur un exemplaire pour le détail.</p>
+  <div class="gallery" id="gallery"></div>
+  <p class="msg" id="gallery-msg"></p>
+
+</main>
+
+<dialog id="detail">
+  <img id="detail-img" alt="">
+  <h3 id="detail-title"></h3>
+  <p class="desc" id="detail-desc"></p>
+  <dl>
+    <dt>Identifiant</dt>      <dd id="detail-id"></dd>
+    <dt>Teinte</dt>           <dd id="detail-hue"></dd>
+    <dt>Artiste</dt>          <dd id="detail-artist"></dd>
+    <dt>Propriétaire</dt>     <dd><code id="detail-owner"></code></dd>
+  </dl>
+  <div class="row">
+    <button id="detail-close">Fermer</button>
+    <a id="detail-link" target="_blank" rel="noopener">Voir sur Blockscout</a>
+  </div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script>
+// --- Configuration ---------------------------------------------------------
+
+const CONTRACT_ADDRESS = "0x22E8fd2682AF5c9a72b6942cd82dB7F8f778da72";
+const CHAIN_ID = 11155111n;          // Sepolia
+const CHAIN_ID_HEX = "0xaa36a7";
+
+// Points d'acces publics, sans cle d'API : rien de secret ne figure dans ce
+// fichier. Ils sont essayes dans l'ordre, le premier qui repond est retenu.
+const RPC_ENDPOINTS = [
+  "https://ethereum-sepolia-rpc.publicnode.com",
+  "https://sepolia.drpc.org",
+  "https://rpc.sepolia.org"
+];
+
+// Interface minimale : seules les fonctions dont la page a besoin. Les deux
+// erreurs permettent a ethers de nommer les echecs plutot que de renvoyer un
+// message brut.
+const ABI = [
+  "function MAX_SUPPLY() view returns (uint256)",
+  "function totalMinted() view returns (uint256)",
+  "function owner() view returns (address)",
+  "function ownerOf(uint256 tokenId) view returns (address)",
+  "function hueOf(uint256 tokenId) view returns (uint256)",
+  "function tokenURI(uint256 tokenId) view returns (string)",
+  "function mint(address to)",
+  "error OwnableUnauthorizedAccount(address account)",
+  "error MaxSupplyReached()"
+];
+
+// --- Etat ------------------------------------------------------------------
+
+let readContract = null;   // lecture seule, via un noeud public
+let contractOwner = null;  // proprietaire du contrat, en minuscules
+let signerAddress = null;  // compte MetaMask connecte, en minuscules
+
+// --- Utilitaires -----------------------------------------------------------
+
+const $ = (id) => document.getElementById(id);
+
+function say(id, text, kind = "") {
+  const el = $(id);
+  el.textContent = text;
+  el.className = "msg " + kind;
+}
+
+function shorten(address) {
+  return address.slice(0, 6) + "…" + address.slice(-4);
+}
+
+/**
+ * Decode un tokenURI de la forme data:application/json;base64,<...>
+ * Le champ "image" qu'il contient est lui-meme un data URI : il peut donc
+ * etre place tel quel dans un attribut src, sans traitement supplementaire.
+ */
+function decodeTokenURI(uri) {
+  const base64 = uri.slice(uri.indexOf(",") + 1);
+  return JSON.parse(atob(base64));
+}
+
+/** Traduit une erreur de transaction en message lisible. */
+function explainError(error) {
+  const name = error?.revert?.name;
+  if (name === "OwnableUnauthorizedAccount") {
+    return "Refusé : ce compte n'est pas le propriétaire du contrat.";
+  }
+  if (name === "MaxSupplyReached") {
+    return "Refusé : la collection est complète, les 42 exemplaires existent déjà.";
+  }
+  if (error?.code === "ACTION_REJECTED") {
+    return "Transaction annulée dans MetaMask.";
+  }
+  return error?.shortMessage || error?.message || "Erreur inconnue.";
+}
+
+// --- Lecture ---------------------------------------------------------------
+
+/** Retourne le premier noeud public qui repond, ou leve une erreur. */
+async function connectToNode() {
+  for (const url of RPC_ENDPOINTS) {
+    try {
+      const provider = new ethers.JsonRpcProvider(url, {
+        chainId: Number(CHAIN_ID), name: "sepolia"
+      });
+      await provider.getBlockNumber();
+      return provider;
+    } catch {
+      // noeud injoignable, on essaie le suivant
+    }
+  }
+  throw new Error("Aucun noeud Sepolia n'a répondu.");
+}
+
+async function loadState() {
+  const [max, minted, owner] = await Promise.all([
+    readContract.MAX_SUPPLY(),
+    readContract.totalMinted(),
+    readContract.owner()
+  ]);
+
+  contractOwner = owner.toLowerCase();
+  $("stat-minted").textContent = minted.toString();
+  $("stat-max").textContent = max.toString();
+  $("stat-owner").textContent = owner;
+
+  return minted;
+}
+
+async function loadGallery(minted) {
+  const gallery = $("gallery");
+  gallery.textContent = "";
+
+  if (minted === 0n) {
+    say("gallery-msg", "Aucun exemplaire minté pour l'instant.");
+    return;
+  }
+  say("gallery-msg", "");
+
+  for (let id = 0n; id < minted; id++) {
+    try {
+      const [uri, holder, hue] = await Promise.all([
+        readContract.tokenURI(id),
+        readContract.ownerOf(id),
+        readContract.hueOf(id)
+      ]);
+      const metadata = decodeTokenURI(uri);
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const img = document.createElement("img");
+      img.src = metadata.image;
+      img.alt = metadata.name;
+      card.appendChild(img);
+
+      const body = document.createElement("div");
+      body.className = "card-body";
+
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = metadata.name;
+      body.appendChild(title);
+
+      const meta = document.createElement("div");
+      meta.className = "card-meta";
+      meta.textContent = "teinte " + hue.toString() + " · " + shorten(holder);
+      body.appendChild(meta);
+
+      card.appendChild(body);
+
+      // La carte est cliquable : les metadonnees deja decodees sont conservees
+      // pour la fenetre de detail, il n'y a pas de seconde lecture du contrat.
+      const token = { id, holder, hue, metadata };
+      card.tabIndex = 0;
+      card.setAttribute("role", "button");
+      card.addEventListener("click", () => openDetail(token));
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openDetail(token);
+        }
+      });
+
+      gallery.appendChild(card);
+    } catch (error) {
+      say("gallery-msg", "Exemplaire " + id + " illisible : " + explainError(error), "error");
+    }
+  }
+}
+
+/** Cherche la valeur d'un attribut dans les metadonnees du token. */
+function traitValue(metadata, name) {
+  const trait = (metadata.attributes || []).find((a) => a.trait_type === name);
+  return trait ? String(trait.value) : "—";
+}
+
+function openDetail(token) {
+  $("detail-img").src = token.metadata.image;
+  $("detail-img").alt = token.metadata.name;
+  $("detail-title").textContent = token.metadata.name;
+  $("detail-desc").textContent = token.metadata.description || "";
+  $("detail-id").textContent = token.id.toString();
+  $("detail-hue").textContent = token.hue.toString() + "°";
+  $("detail-artist").textContent = traitValue(token.metadata, "artist");
+  $("detail-owner").textContent = token.holder;
+  $("detail-link").href =
+    "https://eth-sepolia.blockscout.com/token/" + CONTRACT_ADDRESS +
+    "/instance/" + token.id.toString();
+
+  $("detail").showModal();
+}
+
+async function refresh() {
+  try {
+    const minted = await loadState();
+    await loadGallery(minted);
+    updateMintButton();
+  } catch (error) {
+    say("read-msg", "Lecture impossible : " + explainError(error), "error");
+  }
+}
+
+// --- Ecriture --------------------------------------------------------------
+
+/** Active ou desactive le bouton selon que le compte connecte est proprietaire. */
+function updateMintButton() {
+  const button = $("btn-mint");
+  if (!signerAddress) return;
+
+  const isOwner = signerAddress === contractOwner;
+  button.disabled = !isOwner;
+
+  if (!isOwner) {
+    say("mint-msg",
+      "Ce compte n'est pas le propriétaire du contrat : le mint lui sera refusé.",
+      "error");
+  } else {
+    say("mint-msg", "");
+  }
+}
+
+async function connectWallet() {
+  if (!window.ethereum) {
+    say("mint-msg",
+      "Aucun wallet détecté. La galerie ci-dessous reste consultable sans wallet.",
+      "error");
+    return;
+  }
+
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const network = await provider.getNetwork();
+
+    if (network.chainId !== CHAIN_ID) {
+      // On propose a MetaMask de basculer sur Sepolia plutot que d'echouer.
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: CHAIN_ID_HEX }]
+      });
+    }
+
+    const signer = await provider.getSigner();
+    signerAddress = (await signer.getAddress()).toLowerCase();
+
+    $("account").textContent = await signer.getAddress();
+    $("btn-connect").textContent = "Reconnecter";
+    $("btn-connect").className = "ghost";
+    $("mint-form").hidden = false;
+    $("recipient").value = await signer.getAddress();
+
+    updateMintButton();
+  } catch (error) {
+    say("mint-msg", explainError(error), "error");
+  }
+}
+
+async function mint() {
+  const recipient = $("recipient").value.trim();
+
+  if (!ethers.isAddress(recipient)) {
+    say("mint-msg", "Adresse destinataire invalide.", "error");
+    return;
+  }
+
+  const button = $("btn-mint");
+  button.disabled = true;
+
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+    say("mint-msg", "Confirmation en attente dans MetaMask…");
+    const tx = await contract.mint(recipient);
+
+    say("mint-msg", "Transaction envoyée, en attente de confirmation…");
+    await tx.wait();
+
+    say("mint-msg", "Exemplaire créé. Transaction : " + tx.hash, "ok");
+    await refresh();
+  } catch (error) {
+    say("mint-msg", explainError(error), "error");
+  } finally {
+    button.disabled = false;
+    updateMintButton();
+  }
+}
+
+// --- Demarrage -------------------------------------------------------------
+
+$("btn-connect").addEventListener("click", connectWallet);
+$("btn-mint").addEventListener("click", mint);
+$("detail-close").addEventListener("click", () => $("detail").close());
+
+// Clic sur le fond sombre : la cible est le dialog lui-meme, pas son contenu.
+$("detail").addEventListener("click", (event) => {
+  if (event.target === $("detail")) $("detail").close();
+});
+
+// Si l'utilisateur change de compte dans MetaMask, la page doit suivre.
+if (window.ethereum) {
+  window.ethereum.on("accountsChanged", () => connectWallet());
+}
+
+// L'adresse et les liens sont construits depuis CONTRACT_ADDRESS : une seule
+// valeur a changer si le contrat est redeploye.
+$("contract-address").textContent = CONTRACT_ADDRESS;
+$("link-etherscan").href =
+  "https://sepolia.etherscan.io/address/" + CONTRACT_ADDRESS + "#code";
+$("link-blockscout").href =
+  "https://eth-sepolia.blockscout.com/token/" + CONTRACT_ADDRESS;
+
+(async () => {
+  try {
+    const provider = await connectToNode();
+    readContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+    await refresh();
+  } catch (error) {
+    say("read-msg", explainError(error), "error");
+  }
+})();
+</script>
+</body>
+</html>
