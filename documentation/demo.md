@@ -29,6 +29,10 @@ http://localhost:8080.
   **autorisé pour Remix dans les permissions du site** (changer de compte dans MetaMask ne
   suffit pas)
 - Remix ouvert, `Essence42.sol` chargé et **compilé**
+- **Remix connecté en WalletConnect**, QR code scanné avec MetaMask sur mon téléphone.
+  Sur la session du correcteur il n'y a pas mon extension, donc pas d'*Injected Provider* :
+  WalletConnect est le seul chemin pour signer. Vérifier que MetaMask mobile est bien sur
+  Sepolia, avec une URL RPC qui fonctionne.
 - le contrat attaché via *At Address* avec l'adresse de référence
 - les liens Blockscout ouverts dans des onglets
 - **le site de mint lancé** (voir les commandes ci-dessus) et ouvert sur
@@ -71,9 +75,9 @@ Dans Remix : `ownerOf(0)` → renvoie `0x93Bf190F82D00cbC103f32FaCc32f15a63D233f
 
 Comparer avec le compte actif dans MetaMask : c'est la même adresse.
 
-Puis `ownerOf(3)` → renvoie `0xDadC...1101`, **une adresse différente**. Deux exemplaires
-de la même collection, deux propriétaires distincts : c'est exactement ce que le registre
-ERC721 permet et que l'ERC20 ne permettait pas.
+Puis `ownerOf(3)` → `0xDadC...1101`, et `ownerOf(7)` → `0x87c1...0273` : **trois
+propriétaires différents** sur la même collection. C'est exactement ce que le registre
+ERC721 permet et que l'ERC20 ne permettait pas — là-bas, on ne comptait que des soldes.
 
 Enfin `ownerOf(9)` → **erreur**. L'exemplaire n'a jamais été minté, le contrat refuse de
 répondre.
@@ -124,8 +128,9 @@ réglages de compilation, l'ABI.
 Souligner qu'**il n'y a aucune clé ni mot de passe dans le dépôt** — c'est un point de
 flag sur la fiche. Avec Remix, la clé privée ne quitte jamais MetaMask.
 
-**Déploiement en direct** : *Deploy & Run* → environnement Injected Provider → contrat
-`Essence42` → *Deploy*. Le constructeur ne prend aucun argument, il n'y a rien à saisir.
+**Déploiement en direct** : *Deploy & Run* → environnement **WalletConnect** (déjà connecté,
+voir la préparation) → contrat `Essence42` → *Deploy*. Le constructeur ne prend aucun
+argument, il n'y a rien à saisir.
 
 > La nouvelle adresse est différente de celle du dépôt : c'est normal, le code déployé est
 > immuable et chaque déploiement crée un contrat distinct. Enchaîner sur le mint ci-dessous,
