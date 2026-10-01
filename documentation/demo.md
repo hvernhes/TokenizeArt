@@ -24,22 +24,82 @@ http://localhost:8080.
 
 ## Préparation, avant que le correcteur n'arrive
 
-- MetaMask sur **Sepolia**, compte `0x93Bf...33f9` (le propriétaire), solde non nul
-- un second compte disponible — `0xDadC...1101` — pour la démonstration de privilèges,
-  **autorisé pour Remix dans les permissions du site** (changer de compte dans MetaMask ne
-  suffit pas)
-- Remix ouvert, `Essence42.sol` chargé et **compilé**
-- **Remix connecté en WalletConnect**, QR code scanné avec MetaMask sur mon téléphone.
-  Sur la session du correcteur il n'y a pas mon extension, donc pas d'*Injected Provider* :
-  WalletConnect est le seul chemin pour signer. Vérifier que MetaMask mobile est bien sur
-  Sepolia, avec une URL RPC qui fonctionne.
-- le contrat attaché via *At Address* avec l'adresse de référence
-- les liens Blockscout ouverts dans des onglets
-- **le site de mint lancé** (voir les commandes ci-dessus) et ouvert sur
-  http://localhost:8000. Ne **jamais** ouvrir la page par double-clic : en `file://` elle
-  n'a pas d'origine valide, MetaMask refuse de s'y connecter et son interface peut planter.
-- MetaMask connecté au site, et un premier mint fait à blanc pour vérifier que la
-  confirmation s'ouvre bien
+Sur la session du correcteur il n'y a pas mon extension MetaMask. Tout ce qui demande une
+signature passe donc par **WalletConnect et mon téléphone**. Les étapes ci-dessous sont
+dans l'ordre : chacune dépend de la précédente.
+
+### 1. Le dépôt
+
+Cloné depuis GitHub et à jour.
+
+### 2. MetaMask mobile
+
+Compte 1 — `0x93Bf190F82D00cbC103f32FaCc32f15a63D233f9` — sélectionné, avec du SepoliaETH.
+
+**Vérifier l'URL RPC du réseau Sepolia.** C'est le point qui a fait échouer deux
+répétitions, sur Tokenizer puis sur TokenizeArt : le réseau s'appelle bien « Sepolia » dans
+l'application, mais pointe vers un nœud mort. Les appels partent, reviennent d'ailleurs, et
+Remix répond `no code found at address` sur un contrat qui existe pourtant.
+
+URL qui fonctionne, chaîne `11155111`, symbole `ETH` :
+
+```
+https://ethereum-sepolia-rpc.publicnode.com
+```
+
+### 3. Remix — l'adresse exacte
+
+```
+https://remix.ethereum.org/#nomigrationredirect&lang=en
+```
+
+Deux raisons à cette URL précise :
+
+- le projet a déménagé en septembre 2026 vers `app.remix.live`, où **WalletConnect est
+  cassé** : sa liste de domaines autorisés n'a pas suivi, le QR code n'est jamais généré et
+  l'erreur « Invalid App Configuration » apparaît brièvement
+- `remix.ethereum.org` **redirige automatiquement** vers ce nouveau domaine ; le fragment
+  `#nomigrationredirect` est ce qui l'en empêche
+
+C'est un refus de migration, donc par nature temporaire. **À revérifier la veille** : si
+Remix cesse de l'honorer, WalletConnect devient inutilisable et il faut un autre chemin
+pour signer.
+
+### 4. Charger et compiler
+
+`code/Essence42.sol` chargé dans Remix, compilé en 0.8.20 ou plus.
+
+Vérifier que **`Essence42` est sélectionné** dans la liste des contrats de l'onglet
+*Deploy & Run*. Sans contrat sélectionné, le bouton *At Address* reste grisé — Remix a
+besoin de l'ABI issue de la compilation pour savoir quoi appeler.
+
+### 5. Connecter WalletConnect
+
+Environnement **WalletConnect**, QR code scanné avec MetaMask mobile. Sur l'écran
+d'approbation, **ne cocher que Sepolia**.
+
+Le réseau d'une session WalletConnect est figé à sa création : pour en changer, il faut
+fermer la session et en rouvrir une.
+
+### 6. Attacher le contrat et vérifier le réseau
+
+*At Address* avec `0x22E8fd2682AF5c9a72b6942cd82dB7F8f778da72`, puis appeler
+**`MAX_SUPPLY()` — doit renvoyer `42`**.
+
+C'est le **seul** test fiable du réseau. Le solde affiché ne prouve rien : cette adresse
+affiche 0 sur Ethereum comme sur Sepolia tant qu'elle est peu alimentée. Si `MAX_SUPPLY()`
+répond 42, le contrat est bien là, donc le réseau est le bon.
+
+### 7. Lancer le site de mint
+
+Voir les commandes en tête de ce fichier. Ouvert sur http://localhost:8000.
+
+**Jamais par double-clic** : en `file://` la page n'a pas d'origine valide, MetaMask refuse
+de s'y connecter et son interface peut planter.
+
+### 8. Ouvrir les onglets Blockscout
+
+Les liens des exemplaires, prêts à montrer.
 
 ## 1. Montrer le NFT — critère bloquant
 
