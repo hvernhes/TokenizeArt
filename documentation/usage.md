@@ -14,32 +14,36 @@ Contrat de référence : `0x22E8fd2682AF5c9a72b6942cd82dB7F8f778da72`
 
 ## Les fonctions
 
+Le contrat hérite d'`ERC721` et d'`Ownable`, deux contrats d'OpenZeppelin. Une partie des
+fonctions ci-dessous est donc **héritée** et n'apparaît pas dans `Essence42.sol` : elle
+existe dans le code dont il hérite. La colonne « Origine » le précise pour chacune.
+
 ### Lecture — gratuites, sans transaction
 
-| Fonction | Ce qu'elle renvoie |
-|---|---|
-| `name()` | `42 Essence` |
-| `symbol()` | `E42` |
-| `MAX_SUPPLY()` | `42` — le plafond, inscrit dans le code |
-| `totalMinted()` | le nombre d'exemplaires déjà créés |
-| `owner()` | le propriétaire du contrat, seul habilité à minter |
-| `ownerOf(tokenId)` | le propriétaire d'un exemplaire |
-| `balanceOf(address)` | le nombre d'exemplaires détenus par une adresse |
-| `hueOf(tokenId)` | la teinte HSL attribuée à un exemplaire, de 0 à 359 |
-| `tokenURI(tokenId)` | les métadonnées complètes, image comprise |
+| Fonction | Ce qu'elle renvoie | Origine |
+|---|---|---|
+| `name()` | `42 Essence` | `ERC721` |
+| `symbol()` | `E42` | `ERC721` |
+| `MAX_SUPPLY()` | `42` — le plafond, inscrit dans le code | **`Essence42`** |
+| `totalMinted()` | le nombre d'exemplaires déjà créés | **`Essence42`** |
+| `owner()` | le propriétaire du contrat, seul habilité à minter | `Ownable` |
+| `ownerOf(tokenId)` | le propriétaire d'un exemplaire | `ERC721` |
+| `balanceOf(address)` | le nombre d'exemplaires détenus par une adresse | `ERC721` |
+| `hueOf(tokenId)` | la teinte HSL attribuée à un exemplaire, de 0 à 359 | **`Essence42`** |
+| `tokenURI(tokenId)` | les métadonnées complètes, image comprise | **`Essence42`**, redéfinit celle d'`ERC721` |
 
 `ownerOf` et `tokenURI` échouent sur un identifiant jamais minté : le contrat refuse de
 répondre pour un exemplaire qui n'existe pas.
 
 ### Écriture — nécessitent une transaction
 
-| Fonction | Qui peut l'appeler |
-|---|---|
-| `mint(address to)` | **le propriétaire seul** |
-| `transferFrom(from, to, tokenId)` | le propriétaire de l'exemplaire, ou une adresse qu'il a autorisée |
-| `safeTransferFrom(from, to, tokenId)` | idem, avec vérification du destinataire |
-| `approve(to, tokenId)` | le propriétaire de l'exemplaire |
-| `setApprovalForAll(operator, bool)` | tout détenteur |
+| Fonction | Qui peut l'appeler | Origine |
+|---|---|---|
+| `mint(address to)` | **le propriétaire seul** | **`Essence42`** |
+| `transferFrom(from, to, tokenId)` | le propriétaire de l'exemplaire, ou une adresse qu'il a autorisée | `ERC721` |
+| `safeTransferFrom(from, to, tokenId)` | idem, avec vérification du destinataire | `ERC721` |
+| `approve(to, tokenId)` | le propriétaire de l'exemplaire | `ERC721` |
+| `setApprovalForAll(operator, bool)` | tout détenteur | `ERC721` |
 
 `safeTransferFrom` vérifie, quand le destinataire est un contrat, qu'il sait recevoir des
 NFT. Sans cette vérification, un envoi vers un contrat non prévu pour cela rendrait

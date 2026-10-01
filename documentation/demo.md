@@ -28,11 +28,14 @@ Sur la session du correcteur il n'y a pas mon extension MetaMask. Tout ce qui de
 signature passe donc par **WalletConnect et mon téléphone**. Les étapes ci-dessous sont
 dans l'ordre : chacune dépend de la précédente.
 
-### 1. Le dépôt
+*(Préparation en lettres A à H, démonstration en chiffres 1 à 8 — pour ne pas confondre les
+deux séries en pleine soutenance.)*
+
+### A. Le dépôt
 
 Cloné depuis GitHub et à jour.
 
-### 2. MetaMask mobile
+### B. MetaMask mobile
 
 Compte 1 — `0x93Bf190F82D00cbC103f32FaCc32f15a63D233f9` — sélectionné, avec du SepoliaETH.
 
@@ -47,7 +50,7 @@ URL qui fonctionne, chaîne `11155111`, symbole `ETH` :
 https://ethereum-sepolia-rpc.publicnode.com
 ```
 
-### 3. Remix — l'adresse exacte
+### C. Remix — l'adresse exacte
 
 ```
 https://remix.ethereum.org/#nomigrationredirect&lang=en
@@ -65,7 +68,7 @@ C'est un refus de migration, donc par nature temporaire. **À revérifier la vei
 Remix cesse de l'honorer, WalletConnect devient inutilisable et il faut un autre chemin
 pour signer.
 
-### 4. Charger et compiler
+### D. Charger et compiler
 
 `code/Essence42.sol` chargé dans Remix, compilé en 0.8.20 ou plus.
 
@@ -73,15 +76,19 @@ Vérifier que **`Essence42` est sélectionné** dans la liste des contrats de l'
 *Deploy & Run*. Sans contrat sélectionné, le bouton *At Address* reste grisé — Remix a
 besoin de l'ABI issue de la compilation pour savoir quoi appeler.
 
-### 5. Connecter WalletConnect
+### E. Connecter WalletConnect
 
 Environnement **WalletConnect**, QR code scanné avec MetaMask mobile. Sur l'écran
 d'approbation, **ne cocher que Sepolia**.
 
-Le réseau d'une session WalletConnect est figé à sa création : pour en changer, il faut
-fermer la session et en rouvrir une.
+**Le réseau et le compte sont figés à la création de la session.** Changer de compte dans
+MetaMask ne change rien côté Remix : il faut déconnecter la session, en relancer une, et
+rescanner le QR code avec l'autre compte sélectionné.
 
-### 6. Attacher le contrat et vérifier le réseau
+C'est pour ça que la démonstration groupe tout ce qui concerne le compte 1 (points 7 et 8),
+et ne bascule qu'une seule fois vers le compte 2, à la toute fin.
+
+### F. Attacher le contrat et vérifier le réseau
 
 *At Address* avec `0x22E8fd2682AF5c9a72b6942cd82dB7F8f778da72`, puis appeler
 **`MAX_SUPPLY()` — doit renvoyer `42`**.
@@ -90,16 +97,28 @@ C'est le **seul** test fiable du réseau. Le solde affiché ne prouve rien : cet
 affiche 0 sur Ethereum comme sur Sepolia tant qu'elle est peu alimentée. Si `MAX_SUPPLY()`
 répond 42, le contrat est bien là, donc le réseau est le bon.
 
-### 7. Lancer le site de mint
+### G. Lancer le site de mint
 
 Voir les commandes en tête de ce fichier. Ouvert sur http://localhost:8000.
 
 **Jamais par double-clic** : en `file://` la page n'a pas d'origine valide, MetaMask refuse
 de s'y connecter et son interface peut planter.
 
-### 8. Ouvrir les onglets Blockscout
+### H. Ouvrir les onglets Blockscout
 
-Les liens des exemplaires, prêts à montrer.
+La collection :
+
+```
+https://eth-sepolia.blockscout.com/token/0x22E8fd2682AF5c9a72b6942cd82dB7F8f778da72
+```
+
+Les trois exemplaires montrés au point 1 — teintes consécutives, nettement différentes :
+
+```
+https://eth-sepolia.blockscout.com/token/0x22E8fd2682AF5c9a72b6942cd82dB7F8f778da72/instance/0
+https://eth-sepolia.blockscout.com/token/0x22E8fd2682AF5c9a72b6942cd82dB7F8f778da72/instance/1
+https://eth-sepolia.blockscout.com/token/0x22E8fd2682AF5c9a72b6942cd82dB7F8f778da72/instance/2
+```
 
 ## 1. Montrer le NFT — critère bloquant
 
@@ -159,7 +178,17 @@ Ouvrir [`usage.md`](usage.md) : la liste des fonctions, comment lire les métado
 comment afficher le NFT, comment fonctionne la variation des teintes.
 
 La fiche demande au correcteur de **retrouver dans le code les fonctions citées par la
-documentation** — elles y sont toutes.
+documentation**. Le dire avant qu'il ne cherche, pour éviter le malentendu :
+
+> Sur les quatorze fonctions documentées, cinq sont écrites dans `Essence42.sol` —
+> `MAX_SUPPLY`, `mint`, `totalMinted`, `hueOf` et `tokenURI`. Les neuf autres sont celles du
+> standard, héritées d'`ERC721` et d'`Ownable` : elles n'apparaissent pas dans mon fichier,
+> elles sont dans le code d'OpenZeppelin dont il hérite.
+
+La colonne « Origine » des tableaux d'`usage.md` indique la provenance de chacune.
+
+C'est un choix assumé : réimplémenter un standard, c'est réintroduire des failles que des
+années d'audit ont éliminées.
 
 ## 6. Code review
 
@@ -200,25 +229,63 @@ argument, il n'y a rien à saisir.
 
 Ouvrir [`mint/MINT.md`](../mint/MINT.md).
 
-`mint` avec l'adresse du correcteur, ou la tienne. Puis `ownerOf(0)` pour confirmer, et le
-lien Blockscout de l'exemplaire fraîchement créé.
+Une session WalletConnect ne permet pas de changer de compte en cours de route. Le point 8
+est donc organisé pour **n'avoir qu'une seule reconnexion**, placée à la fin : tout ce qui
+demande le compte 1 d'abord, le compte 2 ensuite.
 
-**Puis la démonstration de privilèges** — c'est le point « ownership and privileges » de la
-fiche :
+### 8a. Avec le compte 1 (déjà connecté)
 
-1. basculer MetaMask sur `0xDadC...1101`
-2. appeler `mint`
-3. la transaction est refusée : `OwnableUnauthorizedAccount`
+1. **`mint`** avec l'adresse du correcteur, ou la tienne → la transaction passe.
+   Confirmer avec `ownerOf` sur le nouvel identifiant, et le lien Blockscout de
+   l'exemplaire fraîchement créé.
+2. **`mint` avec l'adresse du compte 2 `0xDadC...1101` comme destinataire** → la
+   transaction passe aussi.
 
-Puis, revenu sur le compte propriétaire, appeler `mint` **avec l'adresse du compte 2 comme
-destinataire** : la transaction passe, et le compte 2 reçoit l'exemplaire.
+   C'est la nuance à souligner : `onlyOwner` porte sur **celui qui appelle** la fonction
+   (`msg.sender`), pas sur le destinataire. Le contrat restreint le droit de **créer**, pas
+   celui de posséder — le comportement attendu d'une collection d'artiste, où seul l'auteur
+   émet, mais où n'importe qui peut détenir.
 
-C'est la nuance à souligner : `onlyOwner` porte sur **celui qui appelle** la fonction
-(`msg.sender`), pas sur le destinataire. Le contrat restreint le droit de **créer**, pas
-celui de posséder — le comportement attendu d'une collection d'artiste, où seul l'auteur
-émet mais où n'importe qui peut détenir.
+### 8b. Reconnexion sur le compte 2
 
-Le compte 2 détient donc des exemplaires sans avoir le moindre privilège sur le contrat.
+Déconnecter la session WalletConnect, en relancer une depuis Remix, et rescanner le QR code
+avec le **compte 2** sélectionné dans MetaMask mobile.
+
+### 8c. Avec le compte 2 — la démonstration de privilèges
+
+Appeler **`mint`** : la transaction est **refusée**, avec `OwnableUnauthorizedAccount`.
+
+C'est le point « ownership and privileges » de la fiche. Et il tombe au bon moment : le
+compte 2 détient des exemplaires — on vient de lui en envoyer un — sans avoir pour autant
+le moindre privilège sur le contrat.
+
+#### MetaMask va refuser pour « fonds insuffisants » — abaisser la limite de gas
+
+C'est un effet de bord, pas un vrai manque de fonds, et il faut le savoir à l'avance.
+
+Une transaction vouée à échouer ne peut pas être estimée. Le wallet se rabat alors sur une
+limite de gas très élevée, proche du maximum d'un bloc, et compare le solde à **ce
+plafond** : 30 millions de gas à 1 gwei, c'est 0,03 ETH. D'où le refus, alors que le coût
+réel est infime.
+
+**La parade :** dans les réglages avancés de la transaction, fixer la limite de gas à
+**100 000**. La vérification de solde porte alors sur un montant négligeable, la
+transaction part, et échoue pour de bon — avec son motif.
+
+Mesuré en répétition : l'échec a consommé **24 510 gas**, soit environ 0,000025 ETH. Mille
+fois moins que ce que le wallet exigeait d'avoir en réserve.
+
+#### La preuve permanente, si rien ne passe en direct
+
+Une transaction de refus a été faite en répétition et reste consultable :
+
+```
+https://eth-sepolia.blockscout.com/tx/0xa7a4844364ef2b934954ed41b19f27ca34353514ab7c67ec7dd145efe8a2fca2
+```
+
+Émise par le compte 2 vers un contrat `Essence42`, statut en échec, motif
+`OwnableUnauthorizedAccount` décodé et affiché. Si MetaMask bloque devant le correcteur, ce
+lien montre exactement ce qu'on cherchait à démontrer — publiquement et de façon permanente.
 
 ## Bonus
 
@@ -231,21 +298,26 @@ le contrat renvoie l'œuvre elle-même, il n'y a aucune ressource externe.
 
 **Le site de mint** — http://localhost:8000, déjà lancé (voir la préparation).
 
+Sur la session du correcteur, la galerie s'affiche mais **le bouton de mint ne peut pas
+fonctionner** : il lui faut un wallet injecté dans le navigateur, et il n'y a pas
+d'extension là-bas. WalletConnect n'y change rien, la page ne l'implémente pas.
+
 Ce qu'il faut montrer, dans cet ordre :
 
-1. **la galerie s'affiche sans wallet connecté** — la page lit un nœud Sepolia public.
-   N'importe qui peut consulter la collection, y compris sur cette machine.
+1. **la galerie s'affiche sans aucun wallet** — la page lit un nœud Sepolia public.
+   N'importe qui peut consulter la collection, depuis n'importe quelle machine.
 2. **cliquer sur un exemplaire** — la fenêtre de détail donne l'image en grand, le nom,
    l'artiste, la teinte et le propriétaire. C'est un second chemin pour montrer les deux
    critères de métadonnées, sans passer par la barre d'adresse.
-3. **connecter MetaMask, puis minter** — la transaction part, et la galerie se met à jour
-   toute seule après confirmation.
-4. **basculer sur le compte 2 et recliquer** — le bouton se désactive avec un message.
+3. **l'interface de mint elle-même** — le bouton, le champ destinataire, et le message
+   affiché quand le compte connecté n'est pas propriétaire.
+4. **la connexion du wallet depuis mon ordinateur**, avec l'extension — le seul moment où
+   je me sers de ma machine. Le mint en direct, lui, a déjà été fait au point 8 via Remix.
 
-   Préciser que **ce blocage est un confort d'interface, pas une sécurité** : réactiver le
-   bouton depuis les outils de développement enverrait une transaction que le contrat
-   rejetterait de toute façon. La protection est on-chain, l'interface ne fait que
-   l'anticiper. C'est une question que le correcteur peut poser.
+Préciser que **le bouton désactivé est un confort d'interface, pas une sécurité** :
+réactiver le bouton depuis les outils de développement enverrait une transaction que le
+contrat rejetterait de toute façon. La protection est on-chain, l'interface ne fait que
+l'anticiper. C'est une question que le correcteur peut poser.
 
 Mentionner aussi que la page **n'utilise aucune clé d'API** — les nœuds interrogés sont
 publics — et qu'elle bascule automatiquement sur un autre nœud si le premier ne répond pas.
